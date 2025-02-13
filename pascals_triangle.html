@@ -29,8 +29,8 @@
     <!-- Main heading -->
     <h1>Pascal's Triangle &amp; Combinatorial Tools</h1>
     
-    <!-- Link to README file (relative link works on GitHub Pages) -->
-    <h2><a href="README.md" target="_blank">README.md</a></h2>
+    <!-- Link to README file -->
+    <h2><a href="https://github.com/NestorXX-XX/Pascal_Triangle/blob/main/README.md" target="_blank">README.md</a></h2>
 
     <!-- Section 1: Pascal's Triangle -->
     <div class="section" id="pascalSection">
@@ -38,7 +38,8 @@
       <label for="triangleRows">Rows:</label>
       <input type="number" id="triangleRows" min="1" value="10"><!-- Number of rows -->
       <br>
-      <button id="displayTriangleBtn">Show Triangle</button><!-- Button to display triangle -->
+      <button id="displayTriangleBtn">Show Triangle</button><!-- Show triangle button -->
+      <button id="clearTriangleBtn">Clear Triangle</button><!-- Clear triangle button -->
       <div id="triangleContainer"></div><!-- Where the triangle appears -->
     </div>
 
@@ -71,15 +72,18 @@
 
     <!-- Footer -->
     <footer>
-      Néstor Gómez Artiles
+      Néstor Gómez Artiles 2025
     </footer>
 
     <script>
+      // Global flag to control triangle generation.
+      let stopTriangle = false;
+
       // Returns the nth row of Pascal's Triangle as an array.
       function getPascalRow(n) {
         let row = [1]; // First element is 1.
-        for (let k = 1; k <= n; k++) { // Loop to compute rest of the row.
-          row.push(row[k - 1] * (n - k + 1) / k); // Recursive formula.
+        for (let k = 1; k <= n; k++) { // Compute row using recursion.
+          row.push(row[k - 1] * (n - k + 1) / k);
         }
         return row;
       }
@@ -87,72 +91,79 @@
       // Display Pascal's Triangle row by row with fade-in.
       document.getElementById('displayTriangleBtn').addEventListener('click', function() {
         const container = document.getElementById('triangleContainer'); // Get container.
-        container.innerHTML = ''; // Clear previous content.
+        container.innerHTML = ''; // Clear old content.
+        stopTriangle = false; // Reset flag.
         let totalRows = parseInt(document.getElementById('triangleRows').value, 10); // Number of rows.
         let currentRow = 0; // Start at row 0.
-        function addRow() { // Add one row at a time.
-          if (currentRow >= totalRows) return; // Stop if done.
+        function addRow() { // Add one row.
+          if (stopTriangle || currentRow >= totalRows) return; // Stop if flag true or done.
           let rowData = getPascalRow(currentRow); // Get row data.
-          let rowDiv = document.createElement('div'); // Create div.
+          let rowDiv = document.createElement('div'); // Create new div.
           rowDiv.className = 'triangleRow'; // Set CSS class.
-          rowDiv.textContent = rowData.join(' '); // Set text.
+          rowDiv.textContent = rowData.join(' '); // Set row text.
           container.appendChild(rowDiv); // Append to container.
           setTimeout(() => rowDiv.classList.add('visible'), 100); // Fade in.
           currentRow++; // Increment row.
-          setTimeout(addRow, 1000); // Next row after 1 sec.
+          setTimeout(addRow, 1000); // Add next row after 1 sec.
         }
-        addRow(); // Start process.
+        addRow(); // Start adding rows.
+      });
+
+      // Clear triangle button: stops adding rows and clears container.
+      document.getElementById('clearTriangleBtn').addEventListener('click', function() {
+        stopTriangle = true; // Set flag to stop further rows.
+        document.getElementById('triangleContainer').innerHTML = ''; // Clear container.
       });
 
       // Simple factorial function.
       function factorial(n) {
-        if (n === 0 || n === 1) return 1; // Base case.
-        let res = 1; // Initialize result.
-        for (let i = 2; i <= n; i++) res *= i; // Multiply up to n.
+        if (n === 0 || n === 1) return 1;
+        let res = 1;
+        for (let i = 2; i <= n; i++) res *= i;
         return res;
       }
 
       // Return binomial coefficient (nCk).
       function combination(n, k) {
-        if (k < 0 || k > n) return 0; // Check bounds.
-        return factorial(n) / (factorial(k) * factorial(n - k)); // Calculate.
+        if (k < 0 || k > n) return 0;
+        return factorial(n) / (factorial(k) * factorial(n - k));
       }
 
       // Event for combinatorial calculator button.
       document.getElementById('calculateCombinationBtn').addEventListener('click', function() {
-        let n = parseInt(document.getElementById('nValue').value, 10); // Get n.
-        let k = parseInt(document.getElementById('kValue').value, 10); // Get k.
-        document.getElementById('combinationResult').textContent = `C(${n},${k}) = ${combination(n, k)}`; // Display result.
+        let n = parseInt(document.getElementById('nValue').value, 10);
+        let k = parseInt(document.getElementById('kValue').value, 10);
+        document.getElementById('combinationResult').textContent = `C(${n},${k}) = ${combination(n, k)}`;
       });
 
       // Parse a string like "x^2" or "1/x" into {base, exponent}.
       function parseSingleVar(str) {
-        str = str.trim(); // Remove spaces.
-        let m = str.match(/^1\/([a-zA-Z]+)(\^(-?\d+))?$/); // Check for "1/x" pattern.
+        str = str.trim();
+        let m = str.match(/^1\/([a-zA-Z]+)(\^(-?\d+))?$/); // Pattern for "1/x" or "1/x^m".
         if (m) return { base: m[1], exponent: m[3] ? -parseInt(m[3], 10) : -1 };
-        m = str.match(/^([a-zA-Z]+)(\^(-?\d+))?$/); // Check for "x" pattern.
+        m = str.match(/^([a-zA-Z]+)(\^(-?\d+))?$/); // Pattern for "x" or "x^m".
         if (m) return { base: m[1], exponent: m[3] ? parseInt(m[3], 10) : 1 };
-        return null; // No match.
+        return null;
       }
 
-      // Expand (A+B)^n; if A and B share the same base, simplify exponents.
+      // Expand (A+B)^n; simplify exponents if A and B share the same base.
       function expandBinomialLatex(n, rawA, rawB) {
-        const parsedA = parseSingleVar(rawA); // Parse A.
-        const parsedB = parseSingleVar(rawB); // Parse B.
+        const parsedA = parseSingleVar(rawA);
+        const parsedB = parseSingleVar(rawB);
         if (parsedA && parsedB && parsedA.base === parsedB.base) {
-          return expandSingleBase(n, parsedA, parsedB); // Simplify.
+          return expandSingleBase(n, parsedA, parsedB);
         } else {
-          return expandGeneric(n, rawA, rawB); // Generic expansion.
+          return expandGeneric(n, rawA, rawB);
         }
       }
 
-      // Expand (x^a + x^b)^n for same base.
+      // Expand (x^a + x^b)^n for the same base.
       function expandSingleBase(n, A, B) {
         let terms = [];
-        for (let k = 0; k <= n; k++) { // Loop over k.
-          let coeff = combination(n, k); // Binomial coefficient.
-          let exp = A.exponent * (n - k) + B.exponent * k; // Combined exponent.
-          let term = (coeff !== 1 || exp === 0 ? coeff : ''); // Include coefficient.
+        for (let k = 0; k <= n; k++) {
+          let coeff = combination(n, k);
+          let exp = A.exponent * (n - k) + B.exponent * k;
+          let term = (coeff !== 1 || exp === 0 ? coeff : '');
           if (exp !== 0) {
             term += (term ? ' \\cdot ' : '') + (exp === 1 ? A.base : `${A.base}^{${exp}}`);
           }
@@ -177,15 +188,15 @@
         return terms.join(' + ');
       }
 
-      // Event for binomial expansion button.
+      // Event for the binomial expansion button.
       document.getElementById('expandBinomialBtn').addEventListener('click', function() {
-        let n = parseInt(document.getElementById('expansionExponent').value, 10); // Get exponent.
-        let A = document.getElementById('varA').value || 'x'; // Get A.
-        let B = document.getElementById('varB').value || '1'; // Get B.
-        let latex = `$$(${A} + ${B})^{${n}} = ${expandBinomialLatex(n, A, B)}$$`; // Build LaTeX.
-        let resultDiv = document.getElementById('expansionResult'); // Get result div.
-        resultDiv.innerHTML = latex; // Insert LaTeX.
-        if (window.MathJax) MathJax.typesetPromise([resultDiv]); // Render math.
+        let n = parseInt(document.getElementById('expansionExponent').value, 10);
+        let A = document.getElementById('varA').value || 'x';
+        let B = document.getElementById('varB').value || '1';
+        let latex = `$$(${A} + ${B})^{${n}} = ${expandBinomialLatex(n, A, B)}$$`;
+        let resultDiv = document.getElementById('expansionResult');
+        resultDiv.innerHTML = latex;
+        if (window.MathJax) MathJax.typesetPromise([resultDiv]);
       });
     </script>
   </body>
